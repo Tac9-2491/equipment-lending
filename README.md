@@ -40,6 +40,17 @@ Googleアカウントがなくても使えます。データはスプレッド�
    - 更新：`clasp push` のあと `clasp update-deployment <デプロイID>`（URLを変えないため）
 6. 管理画面を開いてQRを印刷し、機器と設置場所に貼る。「URLをシートに書き出す」で各マスタにURLも残せる
 
+### 現在のデプロイ
+
+- デプロイID：`AKfycbwZ8toQLrrxSsXolNB62qussM-yc6lOTyrCqlbnp7_qvOkBCRX3ujdFVWJi_4XrjXugwA`
+- URL：https://script.google.com/macros/s/AKfycbwZ8toQLrrxSsXolNB62qussM-yc6lOTyrCqlbnp7_qvOkBCRX3ujdFVWJi_4XrjXugwA/exec
+- 更新手順（URLを変えずに反映）：
+
+```
+clasp push
+clasp update-deployment AKfycbwZ8toQLrrxSsXolNB62qussM-yc6lOTyrCqlbnp7_qvOkBCRX3ujdFVWJi_4XrjXugwA --description "変更内容"
+```
+
 ### WebアプリのURLがずれる場合
 
 デプロイが複数あると、QRに入るURLが意図したものにならないことがあります。
