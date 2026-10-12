@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>備品貸出管理</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app"></header>
+  <main id="app"><div class="loading">読み込み中…</div></main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <script src="config.js"></script>
+  <script src="common.js"></script>
+  <script src="item.js"></script>
+  <script src="list.js"></script>
+  <script src="admin.js"></script>
+  <script>
+    // URLパラメータで画面を切り替える
+    (function () {
+      const app = document.getElementById('app');
+      if (PARAMS.page === 'admin') initAdminPage(app, PARAMS.key || '');
+      else if (PARAMS.id) initItemPage(app, PARAMS.id);
+      else initListPage(app, PARAMS.loc || '');
+    })();
+  </script>
+</body>
+</html>

@@ -19,7 +19,7 @@ function setup() {
   }
   console.log('セットアップ完了: ' + ss.getUrl());
   console.log('管理キー(ADMIN_KEY): ' + key);
-  console.log('管理画面: ' + getBaseUrl_() + '?page=admin&key=' + key);
+  console.log('管理画面: ' + adminUrl_(getFrontUrl_(), key));
 }
 
 function getSpreadsheet_() {
@@ -156,7 +156,7 @@ function safeText_(s) {
 
 /** URL列をシートに書き出す */
 function writeUrls_() {
-  const base = getBaseUrl_();
+  const base = getFrontUrl_();
   const eq = readTable_(SHEET.EQUIPMENT);
   const eqCol = eq.header.indexOf('QR用URL') + 1;
   eq.rows.forEach((r) => {

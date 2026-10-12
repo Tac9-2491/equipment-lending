@@ -1,5 +1,5 @@
 /**
- * 画面（google.script.run）から呼ぶ関数。
+ * API（main.js の doGet / doPost）から呼ぶ処理。
  * 戻り値は { ok: true, ... } か { ok: false, message, conflict?, item?, status? }。
  */
 
@@ -135,7 +135,7 @@ function apiGetList(locationId) {
 
 function apiGetAdminData(key) {
   if (!isAdmin_(key)) return { ok: false, message: '管理キーが正しくありません。' };
-  const base = getBaseUrl_();
+  const base = getFrontUrl_();
   const locations = getLocationMap_();
   return {
     ok: true,

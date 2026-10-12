@@ -3,9 +3,10 @@
  */
 const CONFIG = {
   SPREADSHEET_ID: '14ooLUZlIW29LYdwHNnbiLxlyfmVlUmbD6rWaqgOSBxk',
+  // 画面（GitHub Pages）のURL。QRコードにはこのURLが入る
+  FRONT_URL: 'https://tac9-2491.github.io/equipment-lending/',
   TIMEZONE: 'Asia/Tokyo',
   DATE_FORMAT: 'yyyy/MM/dd HH:mm',
-  APP_TITLE: '備品貸出管理',
   NAME_MAX_LENGTH: 50,
   LOCK_TIMEOUT_MS: 10000,
 };
