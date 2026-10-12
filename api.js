@@ -139,6 +139,7 @@ function apiGetAdminData(key) {
   const locations = getLocationMap_();
   return {
     ok: true,
+    accessKey: PropertiesService.getScriptProperties().getProperty('ACCESS_KEY') || '',
     locations: Object.keys(locations).map((id) => ({ id, name: locations[id].name, url: locationUrl_(base, id) })),
     equipment: getEquipmentList_().map((e) => ({
       id: e.id,
@@ -178,6 +179,16 @@ function findEnabledEquipment_(id) {
 
 function appendLog_(obj) {
   appendRow_(readTable_(SHEET.LOG), obj);
+}
+
+/** 認証キーは大文字小文字・前後の空白を区別しない */
+function isAccessKeyValid_(k) {
+  const expected = PropertiesService.getScriptProperties().getProperty('ACCESS_KEY');
+  return !!expected && str_(k).toLowerCase() === expected.toLowerCase();
+}
+
+function authError_() {
+  return { ok: false, authError: true, message: '認証キーが正しくありません。設置場所に掲示されている認証キーを入力してください。' };
 }
 
 function isAdmin_(key) {

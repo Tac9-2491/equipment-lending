@@ -16,10 +16,79 @@ const NameStore = {
   },
 };
 
+// ---- 認証キー（設置場所に掲示）。期限つきで端末に保存する ----
+const AccessKeyStore = {
+  KEY: 'equipmentLending.accessKey',
+  get() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(this.KEY) || 'null');
+      if (!saved || !saved.key) return '';
+      if (Date.now() > saved.expiresAt) { this.clear(); return ''; }
+      return saved.key;
+    } catch (e) { return ''; }
+  },
+  set(key) {
+    const expiresAt = Date.now() + APP_CONFIG.ACCESS_KEY_DAYS * 24 * 60 * 60 * 1000;
+    try { localStorage.setItem(this.KEY, JSON.stringify({ key, expiresAt })); return true; } catch (e) { return false; }
+  },
+  clear() {
+    try { localStorage.removeItem(this.KEY); } catch (e) { /* 無視 */ }
+  },
+};
+
+// このページで使う認証キー。端末に保存できなくても、ページを開いている間は使える
+let sessionKey = '';
+
+/** 認証キーがなければ入力画面を出し、正しいキーが入るまで待つ */
+function ensureAccessKey(app) {
+  sessionKey = AccessKeyStore.get();
+  if (sessionKey) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    app.innerHTML =
+      '<div class="card">' +
+        '<h1>認証キーの入力</h1>' +
+        '<p class="muted">設置場所に掲示されている認証キーを入力してください。この端末に' + APP_CONFIG.ACCESS_KEY_DAYS + '日間保存されます。</p>' +
+        '<div id="keyMsg"></div>' +
+        '<label class="field" for="keyInput">認証キー</label>' +
+        '<input type="text" id="keyInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="例：ab3k9x">' +
+        '<button class="primary" id="keyBtn">確認</button>' +
+      '</div>';
+    const input = document.getElementById('keyInput');
+    const msg = document.getElementById('keyMsg');
+    const submit = async () => {
+      const k = input.value.trim().toLowerCase();
+      if (!k) return;
+      let res;
+      try {
+        res = await withBusy('確認中…', () => apiGet({ action: 'verify' }, k));
+      } catch (err) {
+        msg.innerHTML = '<div class="msg error">通信エラー：' + esc(err.message) + '</div>';
+        return;
+      }
+      if (!res.ok) {
+        msg.innerHTML = '<div class="msg error">' + esc(res.message) + '</div>';
+        input.select();
+        return;
+      }
+      sessionKey = k;
+      if (!AccessKeyStore.set(k)) {
+        await alertDialog('この端末（ブラウザ）には認証キーを保存できませんでした。次回もう一度入力してください。');
+      }
+      resolve();
+    };
+    document.getElementById('keyBtn').addEventListener('click', submit);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+    input.focus();
+  });
+}
+
 // ---- API呼び出し ----
 // credentials: 'omit' で Google のログイン情報を送らない（複数アカウントログイン時のエラーを避ける）
-async function apiGet(params) {
-  const res = await fetch(APP_CONFIG.API_URL + '?' + new URLSearchParams(params), { credentials: 'omit' });
+// k を省略すると保存済みの認証キーを付ける
+async function apiGet(params, k) {
+  const query = new URLSearchParams(Object.assign({ k: k || sessionKey }, params));
+  const res = await fetch(APP_CONFIG.API_URL + '?' + query, { credentials: 'omit' });
   return parseResponse(res);
 }
 
@@ -29,18 +98,28 @@ async function apiPost(body) {
     method: 'POST',
     credentials: 'omit',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(body),
+    body: JSON.stringify(Object.assign({ k: sessionKey }, body)),
   });
   return parseResponse(res);
 }
 
 async function parseResponse(res) {
   if (!res.ok) throw new Error('サーバーエラー（' + res.status + '）');
+  let data;
   try {
-    return await res.json();
+    data = await res.json();
   } catch (e) {
     throw new Error('サーバーの応答を読み取れませんでした');
   }
+  // 保存していた認証キーが変更・失効していたら、入力し直してもらう
+  if (data.authError && sessionKey) {
+    AccessKeyStore.clear();
+    sessionKey = '';
+    await alertDialog('認証キーが変更されました。掲示されている新しい認証キーを入力してください。');
+    location.reload();
+    return new Promise(() => {}); // 再読み込みまで待つ
+  }
+  return data;
 }
 
 async function withBusy(label, task) {

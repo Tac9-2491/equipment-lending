@@ -2,8 +2,9 @@
  * Webアプリの入口。画面は GitHub Pages（docs/）にあり、ここは JSON を返す API だけを担う。
  * 画面からの通信には Google のログイン情報が付かないため、複数アカウントでログインしていても使える。
  *
- * 読み取り（GET）  ?action=item&id=EQ001 / ?action=list&loc=L01 / ?action=admin&key=...
+ * 読み取り（GET）  ?action=verify / ?action=item&id=EQ001 / ?action=list&loc=L01 / ?action=admin&key=...
  * 書き込み（POST） 本文 {"action":"start"|"return"|"writeUrls", ...}
+ *   管理以外の操作には、設置場所に掲示した認証キー（k）が必要。
  *   POST は CORS のプリフライトを避けるため Content-Type: text/plain で送る。
  */
 function doGet(e) {
@@ -11,10 +12,12 @@ function doGet(e) {
   if (!p.action) return movedPage_(p);
 
   return respond_(() => {
+    if (p.action === 'admin') return apiGetAdminData(p.key);
+    if (!isAccessKeyValid_(p.k)) return authError_();
     switch (p.action) {
+      case 'verify': return { ok: true };
       case 'item': return apiGetItem(p.id);
       case 'list': return apiGetList(p.loc || '');
-      case 'admin': return apiGetAdminData(p.key);
       default: return { ok: false, message: '不明な操作です: ' + p.action };
     }
   });
@@ -28,10 +31,11 @@ function doPost(e) {
     } catch (err) {
       return { ok: false, message: 'リクエストの形式が正しくありません。' };
     }
+    if (body.action === 'writeUrls') return apiWriteUrls(body.key);
+    if (!isAccessKeyValid_(body.k)) return authError_();
     switch (body.action) {
       case 'start': return apiStartUse(body.id, body.name);
       case 'return': return apiReturn(body.id, body.returner);
-      case 'writeUrls': return apiWriteUrls(body.key);
       default: return { ok: false, message: '不明な操作です: ' + body.action };
     }
   });

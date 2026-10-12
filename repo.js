@@ -17,9 +17,25 @@ function setup() {
     key = Utilities.getUuid().replace(/-/g, '').slice(0, 16);
     props.setProperty('ADMIN_KEY', key);
   }
+  let accessKey = props.getProperty('ACCESS_KEY');
+  if (!accessKey) {
+    accessKey = generateAccessKey_();
+    props.setProperty('ACCESS_KEY', accessKey);
+  }
   console.log('セットアップ完了: ' + ss.getUrl());
   console.log('管理キー(ADMIN_KEY): ' + key);
+  console.log('認証キー(ACCESS_KEY・掲示用): ' + accessKey);
   console.log('管理画面: ' + adminUrl_(getFrontUrl_(), key));
+}
+
+/** 掲示用の認証キー。読み間違えやすい文字（0/o, 1/l/i）を除いた英小文字＋数字 */
+function generateAccessKey_() {
+  const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+  let key = '';
+  for (let i = 0; i < CONFIG.ACCESS_KEY_LENGTH; i++) {
+    key += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return key;
 }
 
 function getSpreadsheet_() {

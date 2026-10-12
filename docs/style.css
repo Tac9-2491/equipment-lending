@@ -167,3 +167,7 @@ table.status tr.in-use td { background: #fffafa; }
   .label.disabled { display: none; }
   body.hide-url .label .url { display: none; }
 }
+.label.keysign .key {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 34px; font-weight: 700; letter-spacing: .15em; margin: 8px 0;
+}

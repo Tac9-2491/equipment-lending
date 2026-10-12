@@ -9,6 +9,7 @@ const CONFIG = {
   DATE_FORMAT: 'yyyy/MM/dd HH:mm',
   NAME_MAX_LENGTH: 50,
   LOCK_TIMEOUT_MS: 10000,
+  ACCESS_KEY_LENGTH: 6,
 };
 
 const SHEET = {

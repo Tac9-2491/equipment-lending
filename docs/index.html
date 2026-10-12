@@ -21,9 +21,15 @@
     // URLパラメータで画面を切り替える
     (function () {
       const app = document.getElementById('app');
-      if (PARAMS.page === 'admin') initAdminPage(app, PARAMS.key || '');
-      else if (PARAMS.id) initItemPage(app, PARAMS.id);
-      else initListPage(app, PARAMS.loc || '');
+      if (PARAMS.page === 'admin') {
+        initAdminPage(app, PARAMS.key || '');
+        return;
+      }
+      renderHeader();
+      ensureAccessKey(app).then(() => {
+        if (PARAMS.id) initItemPage(app, PARAMS.id);
+        else initListPage(app, PARAMS.loc || '');
+      });
     })();
   </script>
 </body>

@@ -25,6 +25,7 @@ Googleアカウントがなくても使えます。データはスプレッド�
 | `…/` | 全機器の状況一覧 |
 | `…/?page=admin&key=管理キー` | QRコード印刷・URL書き出し（管理者用） |
 
+- 初めて開く端末では、設置場所に掲示した**認証キー**の入力を求めます。入力したキーはその端末に30日間保存されます（日数は [docs/config.js](docs/config.js) の `ACCESS_KEY_DAYS`）。
 - 氏名は、初回に「名前を登録しますか？」で「はい」を選ぶとその端末に保存され、次回から自動で入力されます。
 - 保存した名前は、画面右上の「名前設定」から変更・削除できます。
 - 端末への保存にはブラウザの localStorage を使います。プライベートブラウズやブラウザのデータ削除で消えます。
@@ -40,7 +41,16 @@ Googleアカウントがなくても使えます。データはスプレッド�
 
 - 「有効」は空欄なら有効です。`FALSE` を入れるとその機器は使えなくなり、一覧にも出ません。
 - 機器IDはQRコードのURLに入るので、後から変えないでください（変えた場合はQRを貼り替えます）。
-- 管理キーは GAS の「プロジェクトの設定」→「スクリプト プロパティ」の `ADMIN_KEY` にあります。
+## キー
+
+どちらも GAS の「プロジェクトの設定」→「スクリプト プロパティ」にあり、コードやリポジトリには含まれません。
+
+| キー | 用途 | 変えるとき |
+|---|---|---|
+| `ACCESS_KEY` | 利用者が入力する認証キー。管理画面から掲示用カードを印刷して設置場所に貼る | 値を書き換えて掲示を貼り替える。全端末で再入力になる（定期的に変えると、過去に知った人が社外から使い続けることを防げる） |
+| `ADMIN_KEY` | 管理画面（QR・認証キーの印刷）を開くためのキー | 値を書き換える。管理画面のブックマークを更新する |
+
+どちらも `setup` を実行すると、未設定ならランダムに作られます（実行ログに表示）。
 
 ## セットアップ
 
@@ -51,7 +61,7 @@ Googleアカウントがなくても使えます。データはスプレッド�
 5. デプロイの `…/exec` のURLを [docs/config.js](docs/config.js) の `API_URL` に設定する
 6. GitHub のリポジトリ設定で Pages を有効にする（Settings → Pages → Branch: `main` / フォルダ: `/docs`）
 7. 画面のURLを [config.js](config.js) の `FRONT_URL` に設定する（シートへのURL書き出しに使う）
-8. 管理画面を開いてQRを印刷し、機器と設置場所に貼る
+8. 管理画面を開いてQRと認証キーのカードを印刷し、機器と設置場所に貼る
 
 ### 現在のデプロイ
 
@@ -69,6 +79,7 @@ clasp update-deployment AKfycbwZ8toQLrrxSsXolNB62qussM-yc6lOTyrCqlbnp7_qvOkBCRX3
 
 | 方式 | 内容 |
 |---|---|
+| `GET ?action=verify&k=…` | 認証キーの確認 |
 | `GET ?action=item&id=…` | 機器の情報と状態 |
 | `GET ?action=list&loc=…` | 一覧（`loc` 省略で全機器） |
 | `GET ?action=admin&key=…` | 管理画面用データ |
@@ -76,6 +87,7 @@ clasp update-deployment AKfycbwZ8toQLrrxSsXolNB62qussM-yc6lOTyrCqlbnp7_qvOkBCRX3
 | `POST {"action":"return","id","returner"}` | 返却 |
 | `POST {"action":"writeUrls","key"}` | マスタにURLを書き出す |
 
+- 管理以外の操作には認証キー（GET は `k` パラメータ、POST は本文の `k`）が必要です。
 - POST は CORS のプリフライトを避けるため `Content-Type: text/plain` で送ります。
 - GAS のURLを `action` なしで開くと、画面（GitHub Pages）への案内ページを返します。
 
