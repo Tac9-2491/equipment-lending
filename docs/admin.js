@@ -19,10 +19,11 @@ async function initAdminPage(app, key) {
   app.innerHTML =
     '<div class="card no-print">' +
       '<h1>QRコード印刷</h1>' +
-      '<p class="muted">機器と設置場所のQRコード、認証キーの掲示用カードです。ブラウザの印刷機能（Ctrl+P）で印刷し、切り取って貼ってください。無効の機器は印刷されません。</p>' +
-      '<p class="muted">認証キーを変えるときは、GASの「プロジェクトの設定」→「スクリプト プロパティ」の ACCESS_KEY を書き換えて、掲示を貼り替えてください。全端末で再入力になります。</p>' +
+      '<p class="muted">機器と設置場所のQRコードです（認証キーを添えて印刷できます）。ブラウザの印刷機能（Ctrl+P）で印刷し、切り取って貼ってください。無効の機器は印刷されません。</p>' +
+      '<p class="muted">認証キーを変えるときは、GASの「プロジェクトの設定」→「スクリプト プロパティ」の ACCESS_KEY を書き換えて、QRラベル（と掲示）を貼り替えてください。全端末で再入力になります。</p>' +
       '<div class="options">' +
-        '<label><input type="checkbox" id="optKey" checked> 認証キー</label>' +
+        '<label><input type="checkbox" id="optKeyOnLabel" checked> QRに認証キーを添える</label>' +
+        '<label><input type="checkbox" id="optKey"> 認証キーの掲示用カード</label>' +
         '<label><input type="checkbox" id="optLoc" checked> 設置場所</label>' +
         '<label><input type="checkbox" id="optEq" checked> 機器</label>' +
         '<label><input type="checkbox" id="optUrl"> URLも印刷する</label>' +
@@ -32,7 +33,7 @@ async function initAdminPage(app, key) {
         '<button class="small" id="writeBtn">URLをシートに書き出す</button>' +
       '</div>' +
     '</div>' +
-    '<section id="secKey"><h2>認証キー（掲示用）</h2><div class="labels">' +
+    '<section id="secKey" hidden><h2>認証キー（掲示用）</h2><div class="labels">' +
       (data.accessKey
         ? '<div class="label keysign"><div class="sub">' + esc(APP_CONFIG.APP_TITLE) + '</div><div class="sub">認証キー</div>' +
           '<div class="key">' + esc(data.accessKey) + '</div>' +
@@ -51,6 +52,10 @@ async function initAdminPage(app, key) {
     '</div></section>';
 
   document.querySelectorAll('.qr[data-url]').forEach((el) => { el.innerHTML = qrSvg(el.dataset.url); });
+  const optKeyOnLabel = document.getElementById('optKeyOnLabel');
+  const syncKeyOnLabel = () => document.body.classList.toggle('hide-label-key', !optKeyOnLabel.checked);
+  optKeyOnLabel.addEventListener('change', syncKeyOnLabel);
+  syncKeyOnLabel();
   document.getElementById('optKey').addEventListener('change', (e) => { document.getElementById('secKey').hidden = !e.target.checked; });
   document.getElementById('optLoc').addEventListener('change', (e) => { document.getElementById('secLoc').hidden = !e.target.checked; });
   document.getElementById('optEq').addEventListener('change', (e) => { document.getElementById('secEq').hidden = !e.target.checked; });
@@ -66,6 +71,7 @@ async function initAdminPage(app, key) {
       '<div class="qr" data-url="' + esc(url) + '"></div>' +
       '<div class="name">' + esc(name) + '</div>' +
       '<div class="sub">' + esc(sub) + '</div>' +
+      (data.accessKey ? '<div class="label-key">認証キー <strong>' + esc(data.accessKey) + '</strong></div>' : '') +
       '<div class="url">' + esc(url) + '</div>' +
     '</div>';
   }

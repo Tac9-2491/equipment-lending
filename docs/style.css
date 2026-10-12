@@ -167,6 +167,14 @@ table.status tr.in-use td { background: #fffafa; }
   .label.disabled { display: none; }
   body.hide-url .label .url { display: none; }
 }
+.label .label-key {
+  margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); font-size: 13px;
+}
+.label .label-key strong {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 20px; letter-spacing: .12em; margin-left: 4px;
+}
+body.hide-label-key .label .label-key { display: none; }
 .label.keysign .key {
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
   font-size: 34px; font-weight: 700; letter-spacing: .15em; margin: 8px 0;
