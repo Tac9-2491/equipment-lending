@@ -183,7 +183,7 @@ function appendLog_(obj) {
 
 /**
  * 認証キーを確認する。問題なければ null、だめならエラー応答を返す。
- * 4桁の数字は総当たりに弱いので、入力ミスが続いたら一定時間すべての認証を止める。
+ * 数字だけのキーは総当たりに弱いので、入力ミスが続いたら一定時間すべての認証を止める。
  */
 function checkAccessKey_(k) {
   if (CacheService.getScriptCache().get('authLocked')) {

@@ -9,7 +9,7 @@ const CONFIG = {
   DATE_FORMAT: 'yyyy/MM/dd HH:mm',
   NAME_MAX_LENGTH: 50,
   LOCK_TIMEOUT_MS: 10000,
-  ACCESS_KEY_LENGTH: 4,         // 認証キー（数字）の桁数
+  ACCESS_KEY_LENGTH: 6,         // 認証キー（数字）の桁数
   AUTH_MAX_FAILURES: 20,        // 認証キーの入力ミスがこの回数続いたら（間隔が10分以内）
   AUTH_FAILURE_WINDOW_MIN: 10,
   AUTH_LOCK_MIN: 30,            // この分数、すべての認証を止める（総当たり対策）
