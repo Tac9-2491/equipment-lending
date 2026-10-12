@@ -22,6 +22,7 @@ function setup() {
     accessKey = generateAccessKey_();
     props.setProperty('ACCESS_KEY', accessKey);
   }
+  writeSettingsSheet_();
   console.log('セットアップ完了: ' + ss.getUrl());
   console.log('管理キー(ADMIN_KEY): ' + key);
   console.log('認証キー(ACCESS_KEY・掲示用): ' + accessKey);
@@ -35,7 +36,36 @@ function setup() {
 function resetAccessKey() {
   const key = generateAccessKey_();
   PropertiesService.getScriptProperties().setProperty('ACCESS_KEY', key);
+  writeSettingsSheet_();
   console.log('新しい認証キー(ACCESS_KEY): ' + key);
+}
+
+/**
+ * 「設定」シートに画面のURL・管理画面のURL・各キーを書き出す（表示用）。
+ * 本体はスクリプトプロパティにあり、このシートを書き換えても反映されない。
+ * シートの共有はオーナーのみにしておくこと。
+ */
+function writeSettingsSheet_() {
+  const ss = getSpreadsheet_();
+  const sheet = ss.getSheetByName(SHEET.SETTINGS) || ss.insertSheet(SHEET.SETTINGS);
+  const props = PropertiesService.getScriptProperties();
+  const front = getFrontUrl_();
+  const adminKey = props.getProperty('ADMIN_KEY') || '';
+  const rows = [
+    ['項目', '値', 'メモ'],
+    ['利用画面', front, '全機器の状況一覧'],
+    ['管理画面', adminKey ? adminUrl_(front, adminKey) : '', 'QR・認証キーの印刷。他の人に共有しないこと'],
+    ['管理キー', adminKey, '一覧画面の「管理者メニュー」で入力する。変更はスクリプトプロパティ ADMIN_KEY'],
+    ['認証キー', props.getProperty('ACCESS_KEY') || '', '利用者が入力するキー。変更は resetAccessKey を実行'],
+    ['更新日時', new Date(), 'このシートは表示用。ここを書き換えてもアプリには反映されない'],
+  ];
+  sheet.clear();
+  // 先頭が0のキーが数値に変わらないよう、値の列は書式なしテキストにする
+  sheet.getRange(1, 2, rows.length, 1).setNumberFormat('@');
+  sheet.getRange(1, 1, rows.length, 3).setValues(rows);
+  sheet.getRange(rows.length, 2).setNumberFormat('yyyy/mm/dd hh:mm');
+  sheet.getRange(1, 1, 1, 3).setFontWeight('bold').setBackground('#e8eef7');
+  sheet.setFrozenRows(1);
 }
 
 /** 掲示用の認証キー（数字） */

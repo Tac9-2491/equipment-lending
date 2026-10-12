@@ -179,3 +179,5 @@ body.hide-label-key .label .label-key { display: none; }
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
   font-size: 34px; font-weight: 700; letter-spacing: .15em; margin: 8px 0;
 }
+.admin-link { text-align: right; font-size: 12px; margin-top: 24px; }
+.admin-link a { color: var(--muted); }

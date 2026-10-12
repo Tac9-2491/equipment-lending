@@ -1,19 +1,72 @@
-// 管理画面（?page=admin&key=...）：QRコードの印刷とURLの書き出し
-async function initAdminPage(app, key) {
+// 管理画面（?page=admin）：QRコードの印刷とURLの書き出し
+// 管理キーは URL（&key=...）か入力画面で受け取り、ブラウザ（タブ）を閉じるまで sessionStorage に保存する
+const AdminKeyStore = {
+  KEY: 'equipmentLending.adminKey',
+  get() {
+    try { return sessionStorage.getItem(this.KEY) || ''; } catch (e) { return ''; }
+  },
+  set(v) {
+    try { sessionStorage.setItem(this.KEY, v); } catch (e) { /* 保存できなくてもこのページは使える */ }
+  },
+  clear() {
+    try { sessionStorage.removeItem(this.KEY); } catch (e) { /* 無視 */ }
+  },
+};
+
+async function initAdminPage(app, keyParam) {
   app.classList.add('wide');
   renderHeader();
+  if (keyParam) {
+    AdminKeyStore.set(keyParam);
+    // アドレスバーとブラウザ履歴に管理キーを残さない
+    history.replaceState(null, '', PAGE_BASE + '?page=admin');
+  }
+  const key = keyParam || AdminKeyStore.get();
+  if (!key) {
+    showAdminLogin(app);
+    return;
+  }
+  await loadAdminPage(app, key);
+}
 
+async function loadAdminPage(app, key) {
   let data;
   try {
-    data = await apiGet({ action: 'admin', key });
+    data = await withBusy('読み込み中…', () => apiGet({ action: 'admin', key }));
   } catch (err) {
     app.innerHTML = errorCard('読み込みに失敗しました：' + err.message);
     return;
   }
   if (!data.ok) {
-    app.innerHTML = errorCard(data.message);
+    AdminKeyStore.clear();
+    showAdminLogin(app, data.message);
     return;
   }
+  AdminKeyStore.set(key);
+  renderAdminPage(app, key, data);
+}
+
+function showAdminLogin(app, message) {
+  app.innerHTML =
+    '<div class="card" style="max-width:480px;margin:0 auto">' +
+      '<h1>管理者メニュー</h1>' +
+      '<p class="muted">管理キーを入力してください。管理キーはスプレッドシートの「設定」シートにあります。</p>' +
+      (message ? '<div class="msg error">' + esc(message) + '</div>' : '') +
+      '<label class="field" for="adminKeyInput">管理キー</label>' +
+      '<input type="password" id="adminKeyInput" autocomplete="off" autocapitalize="off" spellcheck="false">' +
+      '<button class="primary" id="adminLoginBtn">開く</button>' +
+    '</div>';
+  const input = document.getElementById('adminKeyInput');
+  const submit = () => {
+    const k = input.value.trim();
+    if (k) loadAdminPage(app, k);
+  };
+  document.getElementById('adminLoginBtn').addEventListener('click', submit);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+  input.focus();
+}
+
+function renderAdminPage(app, key, data) {
 
   // QRコードには、このページ自身のURLを使う
   app.innerHTML =
@@ -31,6 +84,8 @@ async function initAdminPage(app, key) {
       '<div class="row" style="margin-top:12px">' +
         '<button class="small" id="printBtn">印刷する</button>' +
         '<button class="small" id="writeBtn">URLをシートに書き出す</button>' +
+        '<span class="spacer"></span>' +
+        '<button class="small" id="logoutBtn">ログアウト</button>' +
       '</div>' +
     '</div>' +
     '<section id="secKey" hidden><h2>認証キー（掲示用）</h2><div class="labels">' +
@@ -65,6 +120,10 @@ async function initAdminPage(app, key) {
   syncUrl();
   document.getElementById('printBtn').addEventListener('click', () => window.print());
   document.getElementById('writeBtn').addEventListener('click', writeUrls);
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    AdminKeyStore.clear();
+    showAdminLogin(app);
+  });
 
   function label(url, name, sub, enabled) {
     return '<div class="label' + (enabled ? '' : ' disabled') + '">' +
@@ -87,7 +146,7 @@ async function initAdminPage(app, key) {
   async function writeUrls() {
     try {
       const res = await withBusy('書き出し中…', () => apiPost({ action: 'writeUrls', key }));
-      alertDialog(res.ok ? 'シートにURLを書き出しました（機器 ' + res.equipment + ' 件、設置場所 ' + res.locations + ' 件）。' : res.message);
+      alertDialog(res.ok ? 'シートにURLを書き出しました（機器 ' + res.equipment + ' 件、設置場所 ' + res.locations + ' 件、「設定」シートも更新）。' : res.message);
     } catch (err) {
       alertDialog('通信エラー：' + err.message);
     }

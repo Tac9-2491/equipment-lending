@@ -20,6 +20,7 @@ const SHEET = {
   LOCATION: '設置場所マスタ',
   STATUS: '現在の状態',
   LOG: '履歴ログ',
+  SETTINGS: '設定',
 };
 
 const HEADERS = {

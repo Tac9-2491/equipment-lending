@@ -153,7 +153,9 @@ function apiGetAdminData(key) {
 
 function apiWriteUrls(key) {
   if (!isAdmin_(key)) return { ok: false, message: '管理キーが正しくありません。' };
-  return Object.assign({ ok: true }, writeUrls_());
+  const result = writeUrls_();
+  writeSettingsSheet_();
+  return Object.assign({ ok: true }, result);
 }
 
 // ---- 内部処理 ----
