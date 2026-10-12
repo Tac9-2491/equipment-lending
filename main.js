@@ -13,7 +13,8 @@ function doGet(e) {
 
   return respond_(() => {
     if (p.action === 'admin') return apiGetAdminData(p.key);
-    if (!isAccessKeyValid_(p.k)) return authError_();
+    const denied = checkAccessKey_(p.k);
+    if (denied) return denied;
     switch (p.action) {
       case 'verify': return { ok: true };
       case 'item': return apiGetItem(p.id);
@@ -32,7 +33,8 @@ function doPost(e) {
       return { ok: false, message: 'リクエストの形式が正しくありません。' };
     }
     if (body.action === 'writeUrls') return apiWriteUrls(body.key);
-    if (!isAccessKeyValid_(body.k)) return authError_();
+    const denied = checkAccessKey_(body.k);
+    if (denied) return denied;
     switch (body.action) {
       case 'start': return apiStartUse(body.id, body.name);
       case 'return': return apiReturn(body.id, body.returner);

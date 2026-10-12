@@ -181,6 +181,42 @@ function appendLog_(obj) {
   appendRow_(readTable_(SHEET.LOG), obj);
 }
 
+/**
+ * 認証キーを確認する。問題なければ null、だめならエラー応答を返す。
+ * 4桁の数字は総当たりに弱いので、入力ミスが続いたら一定時間すべての認証を止める。
+ */
+function checkAccessKey_(k) {
+  if (CacheService.getScriptCache().get('authLocked')) {
+    return {
+      ok: false,
+      locked: true,
+      message: '認証キーの入力ミスが続いたため、一時的に受け付けを止めています。' + CONFIG.AUTH_LOCK_MIN + '分ほど待ってからもう一度お試しください。',
+    };
+  }
+  if (isAccessKeyValid_(k)) return null;
+  if (str_(k)) recordAuthFailure_();
+  return authError_();
+}
+
+/** 入力ミスを数える。前回のミスから一定時間たつと数え直しになる */
+function recordAuthFailure_() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(3000)) return;
+  try {
+    const cache = CacheService.getScriptCache();
+    const count = Number(cache.get('authFailures') || 0) + 1;
+    if (count >= CONFIG.AUTH_MAX_FAILURES) {
+      cache.put('authLocked', '1', CONFIG.AUTH_LOCK_MIN * 60);
+      cache.remove('authFailures');
+      console.warn('認証キーの入力ミスが' + count + '回続いたため、' + CONFIG.AUTH_LOCK_MIN + '分間認証を停止しました。');
+    } else {
+      cache.put('authFailures', String(count), CONFIG.AUTH_FAILURE_WINDOW_MIN * 60);
+    }
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 /** 認証キーは大文字小文字・前後の空白を区別しない */
 function isAccessKeyValid_(k) {
   const expected = PropertiesService.getScriptProperties().getProperty('ACCESS_KEY');

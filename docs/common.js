@@ -51,7 +51,7 @@ function ensureAccessKey(app) {
         '<p class="muted">設置場所に掲示されている認証キーを入力してください。この端末に' + APP_CONFIG.ACCESS_KEY_DAYS + '日間保存されます。</p>' +
         '<div id="keyMsg"></div>' +
         '<label class="field" for="keyInput">認証キー</label>' +
-        '<input type="text" id="keyInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="例：ab3k9x">' +
+        '<input type="text" id="keyInput" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="数字4桁">' +
         '<button class="primary" id="keyBtn">確認</button>' +
       '</div>';
     const input = document.getElementById('keyInput');

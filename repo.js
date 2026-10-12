@@ -28,12 +28,21 @@ function setup() {
   console.log('管理画面: ' + adminUrl_(getFrontUrl_(), key));
 }
 
-/** 掲示用の認証キー。読み間違えやすい文字（0/o, 1/l/i）を除いた英小文字＋数字 */
+/**
+ * 認証キーを新しく作り直す。GASエディタから実行し、ログに出たキーを掲示し直す。
+ * 自分で決めたキーにしたい場合は、スクリプトプロパティ ACCESS_KEY を直接書き換えてもよい。
+ */
+function resetAccessKey() {
+  const key = generateAccessKey_();
+  PropertiesService.getScriptProperties().setProperty('ACCESS_KEY', key);
+  console.log('新しい認証キー(ACCESS_KEY): ' + key);
+}
+
+/** 掲示用の認証キー（数字） */
 function generateAccessKey_() {
-  const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
   let key = '';
   for (let i = 0; i < CONFIG.ACCESS_KEY_LENGTH; i++) {
-    key += chars.charAt(Math.floor(Math.random() * chars.length));
+    key += String(Math.floor(Math.random() * 10));
   }
   return key;
 }
