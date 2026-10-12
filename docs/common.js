@@ -53,7 +53,8 @@ function ensureAccessKey(app) {
         '<label class="field" for="keyInput">認証キー</label>' +
         '<input type="text" id="keyInput" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="数字6桁">' +
         '<button class="primary" id="keyBtn">確認</button>' +
-      '</div>';
+      '</div>' +
+      '<p class="notice">' + esc(LOGGING_NOTICE) + '</p>';
     const input = document.getElementById('keyInput');
     const msg = document.getElementById('keyMsg');
     const submit = async () => {
@@ -83,11 +84,42 @@ function ensureAccessKey(app) {
   });
 }
 
+// ---- 端末の識別（操作履歴用）。IDは端末ごとにランダムに作って保存する ----
+const Device = {
+  KEY: 'equipmentLending.deviceId',
+  id() {
+    try {
+      let id = localStorage.getItem(this.KEY);
+      if (!id) {
+        id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)).slice(0, 36);
+        localStorage.setItem(this.KEY, id);
+      }
+      return id;
+    } catch (e) {
+      return '（保存不可）';
+    }
+  },
+  // 例：iPhone / Safari
+  summary() {
+    const ua = navigator.userAgent;
+    const os = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android'
+      : /Windows/.test(ua) ? 'Windows' : /Mac OS X/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : 'その他';
+    const browser = /Line\//.test(ua) ? 'LINE' : /Edg/.test(ua) ? 'Edge' : /CriOS|Chrome\//.test(ua) ? 'Chrome'
+      : /FxiOS|Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : 'その他';
+    return os + ' / ' + browser;
+  },
+  params() {
+    return { d: this.id(), dv: this.summary(), ua: navigator.userAgent.slice(0, 300) };
+  },
+};
+
+const LOGGING_NOTICE = '操作履歴として、端末の種類と端末ごとのIDを記録しています。';
+
 // ---- API呼び出し ----
 // credentials: 'omit' で Google のログイン情報を送らない（複数アカウントログイン時のエラーを避ける）
 // k を省略すると保存済みの認証キーを付ける
 async function apiGet(params, k) {
-  const query = new URLSearchParams(Object.assign({ k: k || sessionKey }, params));
+  const query = new URLSearchParams(Object.assign({ k: k || sessionKey }, Device.params(), params));
   const res = await fetch(APP_CONFIG.API_URL + '?' + query, { credentials: 'omit' });
   return parseResponse(res);
 }
@@ -98,7 +130,7 @@ async function apiPost(body) {
     method: 'POST',
     credentials: 'omit',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(Object.assign({ k: sessionKey }, body)),
+    body: JSON.stringify(Object.assign({ k: sessionKey }, Device.params(), body)),
   });
   return parseResponse(res);
 }

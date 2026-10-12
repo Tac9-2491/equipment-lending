@@ -181,3 +181,5 @@ body.hide-label-key .label .label-key { display: none; }
 }
 .admin-link { text-align: right; font-size: 12px; margin-top: 24px; }
 .admin-link a { color: var(--muted); }
+.notice { font-size: 12px; color: var(--muted); margin: 16px 0 0; }
+.notice + .admin-link { margin-top: 4px; }

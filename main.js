@@ -11,7 +11,8 @@ function doGet(e) {
   const p = (e && e.parameter) || {};
   if (!p.action) return movedPage_(p);
 
-  return respond_(() => {
+  setRequestContext_(p);
+  return respond_(p.action, { id: p.id, loc: p.loc }, () => {
     if (p.action === 'admin') return apiGetAdminData(p.key);
     const denied = checkAccessKey_(p.k);
     if (denied) return denied;
@@ -25,13 +26,15 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  return respond_(() => {
-    let body;
-    try {
-      body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-    } catch (err) {
-      return { ok: false, message: 'リクエストの形式が正しくありません。' };
-    }
+  let body;
+  try {
+    body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+  } catch (err) {
+    body = null;
+  }
+  setRequestContext_(body || {});
+  return respond_((body && body.action) || '(不正な形式)', body || {}, () => {
+    if (!body) return { ok: false, message: 'リクエストの形式が正しくありません。' };
     if (body.action === 'writeUrls') return apiWriteUrls(body.key);
     const denied = checkAccessKey_(body.k);
     if (denied) return denied;
@@ -43,7 +46,8 @@ function doPost(e) {
   });
 }
 
-function respond_(fn) {
+/** 処理を実行し、結果をアクセスログに残してJSONで返す */
+function respond_(action, args, fn) {
   let result;
   try {
     result = fn();
@@ -51,6 +55,7 @@ function respond_(fn) {
     console.error(err);
     result = { ok: false, message: err.message };
   }
+  logRequest_(action, args, result);
   return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
 }
 

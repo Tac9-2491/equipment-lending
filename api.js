@@ -180,6 +180,7 @@ function findEnabledEquipment_(id) {
 }
 
 function appendLog_(obj) {
+  obj['端末ID'] = safeText_(REQUEST_CONTEXT.deviceId);
   appendRow_(readTable_(SHEET.LOG), obj);
 }
 
@@ -188,22 +189,24 @@ function appendLog_(obj) {
  * 数字だけのキーは総当たりに弱いので、入力ミスが続いたら一定時間すべての認証を止める。
  */
 function checkAccessKey_(k) {
-  if (CacheService.getScriptCache().get('authLocked')) {
-    return {
-      ok: false,
-      locked: true,
-      message: '認証キーの入力ミスが続いたため、一時的に受け付けを止めています。' + CONFIG.AUTH_LOCK_MIN + '分ほど待ってからもう一度お試しください。',
-    };
-  }
+  if (CacheService.getScriptCache().get('authLocked')) return lockedError_();
   if (isAccessKeyValid_(k)) return null;
-  if (str_(k)) recordAuthFailure_();
+  if (str_(k) && recordAuthFailure_()) return lockedError_();
   return authError_();
 }
 
-/** 入力ミスを数える。前回のミスから一定時間たつと数え直しになる */
+function lockedError_() {
+  return {
+    ok: false,
+    locked: true,
+    message: '認証キーの入力ミスが続いたため、一時的に受け付けを止めています。' + CONFIG.AUTH_LOCK_MIN + '分ほど待ってからもう一度お試しください。',
+  };
+}
+
+/** 入力ミスを数える。前回のミスから一定時間たつと数え直しになる。ロックをかけたら true */
 function recordAuthFailure_() {
   const lock = LockService.getScriptLock();
-  if (!lock.tryLock(3000)) return;
+  if (!lock.tryLock(3000)) return false;
   try {
     const cache = CacheService.getScriptCache();
     const count = Number(cache.get('authFailures') || 0) + 1;
@@ -211,9 +214,10 @@ function recordAuthFailure_() {
       cache.put('authLocked', '1', CONFIG.AUTH_LOCK_MIN * 60);
       cache.remove('authFailures');
       console.warn('認証キーの入力ミスが' + count + '回続いたため、' + CONFIG.AUTH_LOCK_MIN + '分間認証を停止しました。');
-    } else {
-      cache.put('authFailures', String(count), CONFIG.AUTH_FAILURE_WINDOW_MIN * 60);
+      return true;
     }
+    cache.put('authFailures', String(count), CONFIG.AUTH_FAILURE_WINDOW_MIN * 60);
+    return false;
   } finally {
     lock.releaseLock();
   }

@@ -23,6 +23,7 @@ function setup() {
     props.setProperty('ACCESS_KEY', accessKey);
   }
   writeSettingsSheet_();
+  ensurePurgeTrigger_();
   console.log('セットアップ完了: ' + ss.getUrl());
   console.log('管理キー(ADMIN_KEY): ' + key);
   console.log('認証キー(ACCESS_KEY・掲示用): ' + accessKey);

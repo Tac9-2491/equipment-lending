@@ -42,6 +42,7 @@ async function initListPage(app, locationId) {
       });
       html += '</tbody></table></div>';
     }
+    html += '<p class="notice">' + esc(LOGGING_NOTICE) + '</p>';
     html += '<p class="admin-link"><a href="' + esc(PAGE_BASE + '?page=admin') + '">管理者メニュー</a></p>';
     app.innerHTML = html;
     document.getElementById('reloadBtn').addEventListener('click', () => reload(false));
