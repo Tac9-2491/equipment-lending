@@ -25,7 +25,7 @@ Googleアカウントがなくても使えます。データはスプレッド�
 | `…/` | 全機器の状況一覧 |
 | `…/?page=admin` | 管理者メニュー（QRコード印刷・URL書き出し）。管理キーを入力して開く。一覧画面の下のリンクからも入れる |
 
-- 初めて開く端末では、設置場所に掲示した**認証キー**の入力を求めます。入力したキーはその端末に30日間保存されます（日数は [docs/config.js](docs/config.js) の `ACCESS_KEY_DAYS`）。
+- 初めて開く端末では、QRラベルに記載した**認証キー**の入力を求めます。正しいキーを入れた端末にはサーバーが**通行証**を発行し、その端末は30日間、再入力なしで使えます（日数は [config.js](config.js) の `ACCESS_TOKEN_DAYS`）。
 - 氏名は、初回に「名前を登録しますか？」で「はい」を選ぶとその端末に保存され、次回から自動で入力されます。
 - 保存した名前は、画面右上の「名前設定」から変更・削除できます。
 - 端末への保存にはブラウザの localStorage を使います。プライベートブラウズやブラウザのデータ削除で消えます。
@@ -55,7 +55,11 @@ Googleアカウントがなくても使えます。データはスプレッド�
 どちらも `setup` を実行すると、未設定ならランダムに作られます（実行ログに表示）。
 
 - 認証キーは数字6桁です（桁数は [config.js](config.js) の `ACCESS_KEY_LENGTH`）。GASエディタで `resetAccessKey` を実行すると新しいキーに変わり、実行ログに表示されます。
-- 総当たり対策として、入力ミスが20回続く（間隔10分以内）と、30分間すべての認証を止めます。その間は正しいキーでも使えません。回数・時間は [config.js](config.js) の `AUTH_*` で変えられます。
+- 総当たり対策（回数・時間は [config.js](config.js) の `AUTH_*` で変えられます）
+  - 同じ端末で入力ミスが5回続く（間隔10分以内）と、**その端末だけ**30分間キーを入力できなくなります。
+  - 端末IDを変えながらの総当たりに備え、全体で入力ミスが100回続くと、**新しい端末からのキー入力**を30分間止めます。
+  - どちらの場合も、通行証を持っている登録済みの端末はそのまま使えます。
+- 通行証は「端末ID・有効期限・認証キー」をもとにした署名です。別の端末では使えず、認証キーを変えると全端末の通行証が無効になります。署名用の秘密の値はスクリプトプロパティ `TOKEN_SECRET` に自動で作られます。
 - キーは月1回程度変えるのがおすすめです。
 
 ## ログ
@@ -97,7 +101,7 @@ clasp update-deployment AKfycbwZ8toQLrrxSsXolNB62qussM-yc6lOTyrCqlbnp7_qvOkBCRX3
 
 | 方式 | 内容 |
 |---|---|
-| `GET ?action=verify&k=…` | 認証キーの確認 |
+| `GET ?action=verify&k=…&d=端末ID` | 認証キーの確認。正しければ通行証（`token`）を返す |
 | `GET ?action=item&id=…` | 機器の情報と状態 |
 | `GET ?action=list&loc=…` | 一覧（`loc` 省略で全機器） |
 | `GET ?action=admin&key=…` | 管理画面用データ |
@@ -105,7 +109,7 @@ clasp update-deployment AKfycbwZ8toQLrrxSsXolNB62qussM-yc6lOTyrCqlbnp7_qvOkBCRX3
 | `POST {"action":"return","id","returner"}` | 返却 |
 | `POST {"action":"writeUrls","key"}` | マスタにURLを書き出す |
 
-- 管理以外の操作には認証キー（GET は `k` パラメータ、POST は本文の `k`）が必要です。
+- 管理以外の操作には通行証（GET は `t` パラメータ、POST は本文の `t`）と端末ID（`d`）が必要です。認証キー（`k`）でも認証できます。
 - POST は CORS のプリフライトを避けるため `Content-Type: text/plain` で送ります。
 - GAS のURLを `action` なしで開くと、画面（GitHub Pages）への案内ページを返します。
 
@@ -118,6 +122,7 @@ clasp update-deployment AKfycbwZ8toQLrrxSsXolNB62qussM-yc6lOTyrCqlbnp7_qvOkBCRX3
 | `api.js` | 使用開始・返却・一覧・管理の処理 |
 | `repo.js` | シートの読み書き、`setup` |
 | `log.js` | アクセスログ、端末情報、古いログの削除 |
+| `auth.js` | 認証キー・通行証の確認、入力ミスによるロック |
 | `docs/index.html` | 画面の入口（URLパラメータで画面を切り替え） |
 | `docs/config.js` | APIのURL |
 | `docs/common.js` | API呼び出し・名前の保存・モーダルなど共通処理 |

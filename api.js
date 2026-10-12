@@ -184,55 +184,6 @@ function appendLog_(obj) {
   appendRow_(readTable_(SHEET.LOG), obj);
 }
 
-/**
- * 認証キーを確認する。問題なければ null、だめならエラー応答を返す。
- * 数字だけのキーは総当たりに弱いので、入力ミスが続いたら一定時間すべての認証を止める。
- */
-function checkAccessKey_(k) {
-  if (CacheService.getScriptCache().get('authLocked')) return lockedError_();
-  if (isAccessKeyValid_(k)) return null;
-  if (str_(k) && recordAuthFailure_()) return lockedError_();
-  return authError_();
-}
-
-function lockedError_() {
-  return {
-    ok: false,
-    locked: true,
-    message: '認証キーの入力ミスが続いたため、一時的に受け付けを止めています。' + CONFIG.AUTH_LOCK_MIN + '分ほど待ってからもう一度お試しください。',
-  };
-}
-
-/** 入力ミスを数える。前回のミスから一定時間たつと数え直しになる。ロックをかけたら true */
-function recordAuthFailure_() {
-  const lock = LockService.getScriptLock();
-  if (!lock.tryLock(3000)) return false;
-  try {
-    const cache = CacheService.getScriptCache();
-    const count = Number(cache.get('authFailures') || 0) + 1;
-    if (count >= CONFIG.AUTH_MAX_FAILURES) {
-      cache.put('authLocked', '1', CONFIG.AUTH_LOCK_MIN * 60);
-      cache.remove('authFailures');
-      console.warn('認証キーの入力ミスが' + count + '回続いたため、' + CONFIG.AUTH_LOCK_MIN + '分間認証を停止しました。');
-      return true;
-    }
-    cache.put('authFailures', String(count), CONFIG.AUTH_FAILURE_WINDOW_MIN * 60);
-    return false;
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-/** 認証キーは大文字小文字・前後の空白を区別しない */
-function isAccessKeyValid_(k) {
-  const expected = PropertiesService.getScriptProperties().getProperty('ACCESS_KEY');
-  return !!expected && str_(k).toLowerCase() === expected.toLowerCase();
-}
-
-function authError_() {
-  return { ok: false, authError: true, message: '認証キーが正しくありません。設置場所に掲示されている認証キーを入力してください。' };
-}
-
 function isAdmin_(key) {
   const expected = PropertiesService.getScriptProperties().getProperty('ADMIN_KEY');
   return !!expected && str_(key) === expected;

@@ -10,9 +10,12 @@ const CONFIG = {
   NAME_MAX_LENGTH: 50,
   LOCK_TIMEOUT_MS: 10000,
   ACCESS_KEY_LENGTH: 6,         // 認証キー（数字）の桁数
-  AUTH_MAX_FAILURES: 20,        // 認証キーの入力ミスがこの回数続いたら（間隔が10分以内）
+  ACCESS_TOKEN_DAYS: 30,        // 正しいキーを入れた端末が、再入力なしで使える日数
+  // 総当たり対策。入力ミスは前回のミスから10分以内なら連続として数える
+  AUTH_DEVICE_MAX_FAILURES: 5,  // 同じ端末でこの回数続いたら、その端末のキー入力を止める
+  AUTH_GLOBAL_MAX_FAILURES: 100, // 全体でこの回数続いたら、新しい端末からのキー入力を止める（登録済みの端末は使える）
   AUTH_FAILURE_WINDOW_MIN: 10,
-  AUTH_LOCK_MIN: 30,            // この分数、すべての認証を止める（総当たり対策）
+  AUTH_LOCK_MIN: 30,            // 止める時間（分）
   ACCESS_LOG_RETENTION_DAYS: 365, // アクセスログの保存日数。過ぎた行は毎日自動で削除
 };
 

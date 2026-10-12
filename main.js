@@ -4,7 +4,7 @@
  *
  * 読み取り（GET）  ?action=verify / ?action=item&id=EQ001 / ?action=list&loc=L01 / ?action=admin&key=...
  * 書き込み（POST） 本文 {"action":"start"|"return"|"writeUrls", ...}
- *   管理以外の操作には、設置場所に掲示した認証キー（k）が必要。
+ *   管理以外の操作には、通行証（t）か認証キー（k）が必要。verify に正しいキーを送ると通行証を返す。
  *   POST は CORS のプリフライトを避けるため Content-Type: text/plain で送る。
  */
 function doGet(e) {
@@ -14,10 +14,10 @@ function doGet(e) {
   setRequestContext_(p);
   return respond_(p.action, { id: p.id, loc: p.loc }, () => {
     if (p.action === 'admin') return apiGetAdminData(p.key);
-    const denied = checkAccessKey_(p.k);
+    const denied = checkAccess_(p.k, p.t);
     if (denied) return denied;
     switch (p.action) {
-      case 'verify': return { ok: true };
+      case 'verify': return { ok: true, token: issueToken_(REQUEST_CONTEXT.deviceId) };
       case 'item': return apiGetItem(p.id);
       case 'list': return apiGetList(p.loc || '');
       default: return { ok: false, message: '不明な操作です: ' + p.action };
@@ -36,7 +36,7 @@ function doPost(e) {
   return respond_((body && body.action) || '(不正な形式)', body || {}, () => {
     if (!body) return { ok: false, message: 'リクエストの形式が正しくありません。' };
     if (body.action === 'writeUrls') return apiWriteUrls(body.key);
-    const denied = checkAccessKey_(body.k);
+    const denied = checkAccess_(body.k, body.t);
     if (denied) return denied;
     switch (body.action) {
       case 'start': return apiStartUse(body.id, body.name);
